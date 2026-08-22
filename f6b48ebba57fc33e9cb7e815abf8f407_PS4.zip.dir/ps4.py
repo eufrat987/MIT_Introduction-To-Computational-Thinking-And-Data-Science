@@ -5,10 +5,10 @@
 
 import math
 import numpy as np
-import matplotlib as pl
+import matplotlib.pyplot as pl
 import random
 
-from pylab import rand
+#from pylab import rand
 
 from typing import List
 
@@ -93,7 +93,9 @@ class SimpleBacteria(object):
             death_prob (float in [0, 1]): Maximum death probability
         """
         assert type(birth_prob) is float
+        assert birth_prob >= 0 and birth_prob <= 1
         assert type(death_prob) is float
+        assert death_prob >= 0 and death_prob <= 1
 
         self.birth_prob = birth_prob
         self.death_prob = death_prob
@@ -137,7 +139,12 @@ class SimpleBacteria(object):
         """
         assert type(pop_density) is float
 
-        return random.random() < self.birth_prob * (1 - pop_density)
+        re = random.random() < self.birth_prob * (1 - pop_density)
+        if re: 
+            SimpleBacteria(self.birth_prob, self.death_prob)
+        else:
+            raise NoChildException()
+
 
 
 class Patient(object):
@@ -153,7 +160,7 @@ class Patient(object):
                 this patient
         """
 
-        assert type(bacteria) is List[SimpleBacteria]
+        assert type(bacteria) is list
         #assert all(type(x) is SimpleBacteria for x in bacteria)
         assert type(max_pop) is int
 
@@ -206,9 +213,11 @@ class Patient(object):
         # Reproduction of survivors
         pop_density = len(survivors) / self.max_pop
         for b in survivors:
-            birth = b.reproduce(pop_density)
-            if birth:
+            try:
+                birth = b.reproduce(pop_density)
                 self.bacteria.append(SimpleBacteria(b.birth_prob, b.death_prob))
+            except:
+                pass
 
         self.bacteria += survivors
 
@@ -237,7 +246,7 @@ def calc_pop_avg(populations, n):
     for i, _ in enumerate(populations):
         sum += populations[i][n]
 
-    return sum / len(populations) 
+    return sum / len(populations)
 
 
 def simulation_without_antibiotic(num_bacteria,
@@ -273,12 +282,32 @@ def simulation_without_antibiotic(num_bacteria,
         populations (list of lists or 2D array): populations[i][j] is the
             number of bacteria in trial i at time step j
     """
-    pass  # TODO
+    assert type(num_bacteria) is int
+    assert type(max_pop) is int
+    assert type(birth_prob) is float
+    assert birth_prob >= 0 and birth_prob <= 1
+    assert type(death_prob) is float
+    assert death_prob >= 0 and death_prob <= 1
+    assert type(num_trials) is int
+
+    population_history = []
+    for t in range(num_trials):
+        population_history.append([])
+
+        bacterias = [SimpleBacteria(birth_prob, death_prob) for _ in range(num_bacteria)]
+        patient = Patient(bacterias, max_pop)
+
+        population_history[t].append(patient.get_total_pop())
+        for _ in range(299):
+            patient.update()
+            population_history[t].append(patient.get_total_pop())
+
+    return population_history
 
 
 # When you are ready to run the simulation, uncomment the next line
 # populations = simulation_without_antibiotic(100, 1000, 0.1, 0.025, 50)
-
+# print(populations)
 ##########################
 # PROBLEM 3
 ##########################
@@ -304,7 +333,17 @@ def calc_pop_std(populations, t):
         float: the standard deviation of populations across different trials at
              a specific time step
     """
-    pass  # TODO
+    avg = calc_pop_avg(populations, t)
+    std = 0
+
+
+    sum = 0.0
+    for i, _ in enumerate(populations):
+        p = populations[i][t]
+        std += (avg - p)**2
+
+    return std**0.5
+
 
 
 def calc_95_ci(populations, t):
@@ -519,18 +558,18 @@ def simulation_with_antibiotic(num_bacteria,
 
 # When you are ready to run the simulations, uncomment the next lines one
 # at a time
-total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100,
-                                                      max_pop=1000,
-                                                      birth_prob=0.3,
-                                                      death_prob=0.2,
-                                                      resistant=False,
-                                                      mut_prob=0.8,
-                                                      num_trials=50)
-
-total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100,
-                                                      max_pop=1000,
-                                                      birth_prob=0.17,
-                                                      death_prob=0.2,
-                                                      resistant=False,
-                                                      mut_prob=0.8,
-                                                      num_trials=50)
+#total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100,
+#                                                      max_pop=1000,
+#                                                      birth_prob=0.3,
+#                                                      death_prob=0.2,
+#                                                      resistant=False,
+#                                                      mut_prob=0.8,
+#                                                      num_trials=50)
+#
+#total_pop, resistant_pop = simulation_with_antibiotic(num_bacteria=100,
+#                                                      max_pop=1000,
+#                                                      birth_prob=0.17,
+#                                                      death_prob=0.2,
+#                                                      resistant=False,
+#                                                      mut_prob=0.8,
+#                                                      num_trials=50)
